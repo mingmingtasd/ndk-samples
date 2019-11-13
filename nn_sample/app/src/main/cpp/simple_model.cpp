@@ -469,6 +469,30 @@ bool SimpleModel::Compute(float inputValue1, float inputValue2,
     }
 
     ANeuralNetworksEvent_free(event);
+
+    //add by mm----------------------------------------------------------------
+        // Start the execution of the model.
+    // Note that the execution here is asynchronous, and an ANeuralNetworksEvent object will be
+    // created to monitor the status of the execution.
+    event = nullptr;
+    status = ANeuralNetworksExecution_startCompute(execution, &event);
+    if (status != ANEURALNETWORKS_NO_ERROR) {
+        __android_log_print(ANDROID_LOG_ERROR, LOG_TAG,
+                            "ANeuralNetworksExecution_startCompute failed");
+        return false;
+    }
+    // Wait until the completion of the execution. This could be done on a different
+    // thread. By waiting immediately, we effectively make this a synchronous call.
+    status = ANeuralNetworksEvent_wait(event);
+    if (status != ANEURALNETWORKS_NO_ERROR) {
+        __android_log_print(ANDROID_LOG_ERROR, LOG_TAG,
+                            "ANeuralNetworksEvent_wait failed");
+        return false;
+    }
+
+    ANeuralNetworksEvent_free(event);
+    //add by mm---------------------------------------------------------------
+
     ANeuralNetworksExecution_free(execution);
 
     // Validate the results.
