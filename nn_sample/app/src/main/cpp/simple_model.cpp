@@ -20,6 +20,7 @@
 #include <sys/mman.h>
 #include <string>
 #include <unistd.h>
+#include <android/NeuralNetworks.h>
 
 /**
  * SimpleModel Constructor.
@@ -451,50 +452,30 @@ bool SimpleModel::Compute(float inputValue1, float inputValue2,
     // Start the execution of the model.
     // Note that the execution here is asynchronous, and an ANeuralNetworksEvent object will be
     // created to monitor the status of the execution.
-    ANeuralNetworksEvent *event = nullptr;
-    status = ANeuralNetworksExecution_startCompute(execution, &event);
-    if (status != ANEURALNETWORKS_NO_ERROR) {
-        __android_log_print(ANDROID_LOG_ERROR, LOG_TAG,
-                            "ANeuralNetworksExecution_startCompute failed");
-        return false;
-    }
-
-    // Wait until the completion of the execution. This could be done on a different
-    // thread. By waiting immediately, we effectively make this a synchronous call.
-    status = ANeuralNetworksEvent_wait(event);
-    if (status != ANEURALNETWORKS_NO_ERROR) {
-        __android_log_print(ANDROID_LOG_ERROR, LOG_TAG,
-                            "ANeuralNetworksEvent_wait failed");
-        return false;
-    }
-
-    ANeuralNetworksEvent_free(event);
-
-    //add by mm----------------------------------------------------------------
-        // Start the execution of the model.
-    // Note that the execution here is asynchronous, and an ANeuralNetworksEvent object will be
-    // created to monitor the status of the execution.
-    event = nullptr;
-    status = ANeuralNetworksExecution_startCompute(execution, &event);
-    if (status != ANEURALNETWORKS_NO_ERROR) {
-        __android_log_print(ANDROID_LOG_ERROR, LOG_TAG,
-                            "ANeuralNetworksExecution_startCompute failed");
-        return false;
-    }
-    // Wait until the completion of the execution. This could be done on a different
-    // thread. By waiting immediately, we effectively make this a synchronous call.
-    status = ANeuralNetworksEvent_wait(event);
-    if (status != ANEURALNETWORKS_NO_ERROR) {
-        __android_log_print(ANDROID_LOG_ERROR, LOG_TAG,
-                            "ANeuralNetworksEvent_wait failed");
-        return false;
-    }
-
-    ANeuralNetworksEvent_free(event);
-    //add by mm---------------------------------------------------------------
+    //add by mm
+    ANeuralNetworksBurst_create(compilation_, &burst);
+    ANeuralNetworksExecution_burstCompute(execution,burst);
+    //add by mm
+//    ANeuralNetworksEvent *event = nullptr;
+//    status = ANeuralNetworksExecution_startCompute(execution, &event);
+//    if (status != ANEURALNETWORKS_NO_ERROR) {
+//        __android_log_print(ANDROID_LOG_ERROR, LOG_TAG,
+//                            "ANeuralNetworksExecution_startCompute failed");
+//        return false;
+//    }
+//
+//    // Wait until the completion of the execution. This could be done on a different
+//    // thread. By waiting immediately, we effectively make this a synchronous call.
+//    status = ANeuralNetworksEvent_wait(event);
+//    if (status != ANEURALNETWORKS_NO_ERROR) {
+//        __android_log_print(ANDROID_LOG_ERROR, LOG_TAG,
+//                            "ANeuralNetworksEvent_wait failed");
+//        return false;
+//    }
+//
+//    ANeuralNetworksEvent_free(event);
 
     ANeuralNetworksExecution_free(execution);
-
     // Validate the results.
     const float goldenRef = (inputValue1 + 0.5f) * (inputValue2 + 0.5f);
     float *outputTensorPtr = reinterpret_cast<float *>(mmap(nullptr,
@@ -526,6 +507,9 @@ SimpleModel::~SimpleModel() {
     ANeuralNetworksMemory_free(memoryModel_);
     ANeuralNetworksMemory_free(memoryInput2_);
     ANeuralNetworksMemory_free(memoryOutput_);
+    //add by mm
+    ANeuralNetworksBurst_free(burst);
+    //add by mm
     close(inputTensor2Fd_);
     close(outputTensorFd_);
     close(modelDataFd_);

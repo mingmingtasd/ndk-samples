@@ -50,6 +50,9 @@ private:
     ANeuralNetworksMemory *memoryModel_;
     ANeuralNetworksMemory *memoryInput2_;
     ANeuralNetworksMemory *memoryOutput_;
+    //add by mm
+    ANeuralNetworksBurst* burst;
+    //add by mm
 
     uint32_t dimLength_;
     uint32_t tensorSize_;
